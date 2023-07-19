@@ -1,0 +1,45 @@
+name: Quick Build
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Linux setup
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get install \
+          g++-11 \
+          clang-12 \
+          autoconf \
+          automake \
+          autotools-dev \
+          autopoint \
+          libtool \
+          pkg-config \
+          libssl-dev \
+          libc-ares-dev \
+          zlib1g-dev \
+          libsqlite3-dev \
+          libssh2-1-dev \
+          libcppunit-dev
+    - name: Setup gcc (Linux)
+      if: runner.os == 'Linux' && matrix.compiler == 'gcc'
+      run: |
+        echo 'CC=gcc-11' >> $GITHUB_ENV
+        echo 'CXX=g++-11' >> $GITHUB_ENV
+    - name: Libtool
+      run: |
+        autoreconf -i
+    - name: Configure autotools (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        ./configure \
+          CPPFLAGS="-fsanitize=address" LDFLAGS="-fsanitize=address"
+    - name: Rob test
+      run: |
+        make install
+        ls -la
